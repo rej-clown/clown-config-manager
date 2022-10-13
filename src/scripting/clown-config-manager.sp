@@ -1,21 +1,30 @@
 #pragma newdecls required
 
-#define CLOWN_USE_JANSSON
-
 #include <clown-core>
-#include <clown-config-manager>
+#include <clown-core/config-manager>
 
 public Plugin myinfo = 
 {
 	name = "[Clown] Config Manager",
 	author = "rej.chev",
 	description = "...",
-	version = "1.0.0",
+	version = "1.1.0",
 	url = "discord.gg/ChTyPUG"
 };
 
-public DataAction clown_OnDataSent(const char[] path, Handle data)
+public void OnMapStart()
 {
+    ClownCore.SendData(ClownCM_EVENT_ALIVE, null);   
+}
+
+public DataAction clown_OnDataSent(const char[] path, Json data)
+{
+    if(!strcmp(path, ClownCM_EVENT_ALIVE))
+        return kReject;
+
+    if(!strcmp(path, ClownCM_PING))
+        return kReceive;
+
     if(!data)
         return kContinue;
     
@@ -26,7 +35,7 @@ public DataAction clown_OnDataSent(const char[] path, Handle data)
     
     char buffer[PLATFORM_MAX_PATH];
 
-    if(!strcmp(config_manager_get, path, true) || !strcmp(config_manager_set, path, true))
+    if(!strcmp(ClownCM_GET, path, true) || !strcmp(ClownCM_SET, path, true))
     {
         ClownBuildPath(jsonBuffer, buffer, sizeof(buffer));
 
@@ -38,20 +47,20 @@ public DataAction clown_OnDataSent(const char[] path, Handle data)
 
     }
 
-    if(!strcmp(config_manager_get, path, true))
+    if(!strcmp(ClownCM_GET, path, true))
     {
         // data: Json Object
         // data.path: Json String
         // data.build: Json Int (PathType or -1)
         // data.response: Json or Json null
         
-        jsonBuffer.Set("response", cfg = Json.JsonF(buffer, 0));
+        jsonBuffer.Set("response", (cfg = Json.JsonF(buffer, 0)));
 
         delete cfg;
         return kReceive;
     }
 
-    if(!strcmp(config_manager_set, path, true))
+    if(!strcmp(ClownCM_SET, path, true))
     {
         // data: Json Object
         // data.path: Json String
